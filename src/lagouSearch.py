@@ -2,9 +2,10 @@
 import csv
 import sys
 from time import sleep
+
 import requests
-from bs4 import BeautifulSoup
-from selenium import webdriver, common
+from bs4 import BeautifulSoup, element
+from selenium import common, webdriver
 
 
 def createBrowser():
@@ -17,7 +18,7 @@ def createBrowser():
             'images': 2
         }
     })
-    return webdriver.Chrome(executable_path='$HOME/apps/bin/chromedriver', chrome_options=options)
+    return webdriver.Chrome(executable_path='/Users/meicloud/apps/bin/chromedriver', chrome_options=options)
 
 
 def search():
@@ -30,7 +31,7 @@ def search():
     rs = browser.find_element_by_id('switchCity')
     rs.find_element_by_link_text('广州站').click()
     sleep(5)
-    for i in list(range(29)):
+    for i in list(range(30)):
         browser.get('%s%s' % (url, str(i + 1)))
         sleep(6)
         ansyHtml(browser.page_source, i)
@@ -41,10 +42,46 @@ def search():
 def ansyHtml(source, i):
     html = BeautifulSoup(source, features='lxml')
     list = html.find('div', {'id': 's_position_list'}).ul.findAll('li')
-    with open('$HOME/Local/lagou_%s.html' % str(i), 'w+') as f:
-        f.write(source)
-    print('打印第%s页完成' % str(i + 1))
+    for li in list:
+        industry = li.find('div', {'class': 'industry'}).text.strip()
+        tag = li.find('div', {'class': 'li_b_r'}).text.strip()
+        require = li.find('span', {'class': 'money'}
+                          ).parent.contents[4].strip()
+        link = li.find('a', {'class': 'position_link'})['href']
+        info = li.attrs.copy()
+        info['industry'] = industry
+        info['tag'] = tag
+        info['require'] = require
+        info['link'] = link
+        print(info)
+
+
+def ansyLocal():
+    for i in list(range(29)):
+        with open('/Users/meicloud/Local/lagou_%s.html'% str(i), 'r') as f:
+            html = BeautifulSoup(f.read(), features='lxml')
+            lis = html.find('div', {'id': 's_position_list'}).ul.findAll('li')
+            for li in lis:
+                industry = li.find('div', {'class': 'industry'}).text.strip()
+                tag = li.find('div', {'class': 'li_b_r'}).text.strip()
+                require = li.find('span', {'class': 'money'}
+                                ).parent.contents[4].strip()
+                link = li.find('a', {'class': 'position_link'})['href']
+                info = li.attrs.copy()
+                info['industry'] = industry
+                info['tag'] = tag
+                info['require'] = require
+                info['link'] = link
+                print(info)
+                saveResult(info)
+
+num = 1
+def saveResult(result):
+    global num
+    resp = requests.post('http://luwc002.cn.midea.com:9200/works/_doc/%s'% str(num),json=result)
+    print(resp)
+    num = num + 1
 
 
 if __name__ == '__main__':
-    search()
+    ansyLocal()
