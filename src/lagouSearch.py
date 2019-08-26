@@ -18,7 +18,7 @@ def createBrowser():
             'images': 2
         }
     })
-    return webdriver.Chrome(executable_path='/Users/meicloud/apps/bin/chromedriver', chrome_options=options)
+    return webdriver.Chrome(executable_path='/Users/meicloud/apps/bin/chromedriver', options=options)
 
 
 def search():
@@ -41,8 +41,8 @@ def search():
 
 def ansyHtml(source, i):
     html = BeautifulSoup(source, features='lxml')
-    list = html.find('div', {'id': 's_position_list'}).ul.findAll('li')
-    for li in list:
+    lis = html.find('div', {'id': 's_position_list'}).ul.findAll('li')
+    for li in lis:
         industry = li.find('div', {'class': 'industry'}).text.strip()
         tag = li.find('div', {'class': 'li_b_r'}).text.strip()
         require = li.find('span', {'class': 'money'}
@@ -53,19 +53,19 @@ def ansyHtml(source, i):
         info['tag'] = tag
         info['require'] = require
         info['link'] = link
-        print(info)
+        saveResult(info)
 
 
 def ansyLocal():
     for i in list(range(29)):
-        with open('/Users/meicloud/Local/lagou_%s.html'% str(i), 'r') as f:
+        with open('/Users/meicloud/Local/lagou_%s.html' % str(i), 'r') as f:
             html = BeautifulSoup(f.read(), features='lxml')
             lis = html.find('div', {'id': 's_position_list'}).ul.findAll('li')
             for li in lis:
                 industry = li.find('div', {'class': 'industry'}).text.strip()
                 tag = li.find('div', {'class': 'li_b_r'}).text.strip()
                 require = li.find('span', {'class': 'money'}
-                                ).parent.contents[4].strip()
+                                  ).parent.contents[4].strip()
                 link = li.find('a', {'class': 'position_link'})['href']
                 info = li.attrs.copy()
                 info['industry'] = industry
@@ -75,13 +75,17 @@ def ansyLocal():
                 print(info)
                 saveResult(info)
 
+
 num = 1
+
+
 def saveResult(result):
     global num
-    resp = requests.post('http://luwc002.cn.midea.com:9200/works/_doc/%s'% str(num),json=result)
+    resp = requests.post('http://localhost:9200/works/_doc/%s' % str(num), json=result)
     print(resp)
     num = num + 1
 
 
 if __name__ == '__main__':
-    ansyLocal()
+    # ansyLocal()
+    search()
